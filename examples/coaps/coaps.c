@@ -39,24 +39,20 @@
  */
 
 // Configuration
-#define SHELL 0
-#define WITH_TINYDTLS 1
-#define WITH_YACOAP 1
 #define APP_NAME "Secure CoAP server process"
 #define COAP_SERVICE_PORT 6666
-#define DTLS_DEBUG_LEVEL DTLS_LOG_EMERG
-#define DEBUG 0
+#define DTLS_DEBUG_LEVEL DTLS_LOG_DEBUG
 
 // Includes
 #include "contiki.h"
 #include <stdio.h>
 
-#if WITH_TINYDTLS
+#ifdef WITH_TINYDTLS
 #include "dtls.h"
 #include "dtls_debug.h"
 #endif
 
-#if WITH_YACOAP
+#ifdef WITH_YACOAP
 #include "coap.h"
 #endif
 
@@ -84,13 +80,13 @@ PROCESS(coaps_process, APP_NAME);
 AUTOSTART_PROCESSES(&coaps_process);
 
 // tinyDTLS variables
-#if WITH_YACOAP
+#ifdef WITH_YACOAP
 static struct uip_udp_conn *server_conn;
 static dtls_context_t *dtls_context;
 #endif
 
 // YaCoAP variables
-#if WITH_TINYDTLS
+#ifdef WITH_TINYDTLS
 extern void resource_setup(const coap_resource_t *resources);
 extern coap_resource_t resources[];
 #endif
@@ -119,7 +115,7 @@ static void print_local_addresses(void)
 int read_from_peer(struct dtls_context_t *context, session_t *session, uint8 *data, size_t length)
 {
 
-#if WITH_YACOAP
+#ifdef WITH_YACOAP
 	coap_packet_t requestPacket, responsePacket;
 	uint8 responseBuffer[DTLS_MAX_BUF];
 	size_t responseBufferLength = sizeof(responseBuffer);
@@ -132,7 +128,7 @@ int read_from_peer(struct dtls_context_t *context, session_t *session, uint8 *da
 		// Build response packet
 		if ((coap_build(&responsePacket, responseBuffer, &responseBufferLength)) < COAP_ERR)
 		{
-#if WITH_TINYDTLS
+#ifdef WITH_TINYDTLS
 			// Send response packet decrypted over DTLS
 			dtls_write(context, session, responseBuffer, responseBufferLength);
 			return 0;
@@ -241,12 +237,12 @@ PROCESS_THREAD(coaps_process, ev, data)
 	PROCESS_BEGIN();
 	print_local_addresses();
 
-#if WITH_TINYDTLS
+#ifdef WITH_TINYDTLS
 	dtls_init();
 	init_dtls();
 #endif
 
-#if WITH_YACOAP
+#ifdef WITH_YACOAP
 	resource_setup(resources);
 #endif
 
