@@ -228,7 +228,9 @@ main(void)
 
   autostart_start(autostart_processes);
 
+#ifdef DCC2538_CONF_QUIET
   watchdog_start();
+#endif
   fade(LEDS_ORANGE);
 
   while(1) {
