@@ -131,3 +131,5 @@ LOG_OPENOCD
 *.nrf52dk
 
 examples/coaps/burn\.seg
+
+examples/coaps/build\.old
