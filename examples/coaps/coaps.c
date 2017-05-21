@@ -91,26 +91,6 @@ extern void resource_setup(const coap_resource_t *resources);
 extern coap_resource_t resources[];
 #endif
 
-/* Prints out all locally available addresses */
-static void print_local_addresses(void)
-{
-	int i;
-	uint8_t state;
-
-	PRINTF("Server IPv6 addresses: ");
-	for(i = 0; i < UIP_DS6_ADDR_NB; i++) {
-		state = uip_ds6_if.addr_list[i].state;
-		if(state == ADDR_TENTATIVE || state == ADDR_PREFERRED) {
-			PRINT6ADDR(&uip_ds6_if.addr_list[i].ipaddr);
-			PRINTF("\n");
-			/* hack to make address "final" */
-			if (state == ADDR_TENTATIVE) {
-				uip_ds6_if.addr_list[i].state = ADDR_PREFERRED;
-			}
-		}
-	}
-}
-
 /* Called handler function when a new packet is received */
 int read_from_peer(struct dtls_context_t *context, session_t *session, uint8 *data, size_t length)
 {
@@ -235,7 +215,6 @@ void init_dtls()
 PROCESS_THREAD(coaps_process, ev, data)
 {
 	PROCESS_BEGIN();
-	print_local_addresses();
 
 #ifdef WITH_TINYDTLS
 	dtls_init();
