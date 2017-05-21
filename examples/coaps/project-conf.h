@@ -34,9 +34,70 @@
 #define WITH_NON_STORING 0 /* Set this to run with non-storing mode */
 #endif /* WITH_NON_STORING */
 
-#undef NBR_TABLE_CONF_MAX_NEIGHBORS
-#undef UIP_CONF_MAX_ROUTES
 
+
+
+// Define 802.15.4 Settings
+#define NETSTACK_CONF_NETWORK sicslowpan_driver
+#define IEEE802154_CONF_PANID 0xABCD
+#define RF_CHANNEL 26
+#define CC2538_RF_CONF_CHANNEL RF_CHANNEL
+
+// MAC driver
+#define NETSTACK_CONF_MAC     		csma_driver
+
+// RDC driver
+#ifdef CONTIKI_CONTIKIMAC
+#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 16
+#define NETSTACK_CONF_RDC     		contikimac_driver
+#else
+#define NETSTACK_CONF_RDC     		nullrdc_driver
+#undef NULLRDC_CONF_802154_AUTOACK
+#define NULLRDC_CONF_802154_AUTOACK       1
+#endif
+
+//#undef AES_128_CONF
+//#define AES_128_CONF aes_128_driver
+
+// Enable Link Layer Security (LLSEC)
+#ifdef CONTIKI_LLSEC_ACTIVATED
+#undef LLSEC802154_CONF_ENABLED
+#define LLSEC802154_CONF_ENABLED          1
+#undef NETSTACK_CONF_FRAMER
+#define NETSTACK_CONF_FRAMER              noncoresec_framer
+#undef NETSTACK_CONF_LLSEC
+#define NETSTACK_CONF_LLSEC               noncoresec_driver
+#undef NONCORESEC_CONF_SEC_LVL
+#define NONCORESEC_CONF_SEC_LVL           7
+
+// Define network wide key
+#define NONCORESEC_CONF_KEY { 0x00 , 0x01 , 0x02 , 0x03 , \
+                              0x04 , 0x05 , 0x06 , 0x07 , \
+                              0x08 , 0x09 , 0x0A , 0x0B , \
+                              0x0C , 0x0D , 0x0E , 0x0F }
+#else
+#define NETSTACK_CONF_LLSEC nullsec_driver
+#endif
+
+
+
+
+// Energy Modes
+#ifdef CONTIKI_LOWPOWER
+#define ENERGEST_CONF_ON	1
+#define LPM_CONF_ENABLE     1
+#define LPM_CONF_MAX_PM     2
+#define LPM_CONF_STATS      0
+#endif
+
+
+
+
+// UIP network stack
+#define UIP_DS6_CONF_NO_STATIC_ADDRESS 1
+
+#undef UIP_CONF_MAX_ROUTES
+#undef NBR_TABLE_CONF_MAX_NEIGHBORS
 #ifdef TEST_MORE_ROUTES
 /* configure number of neighbors and routes */
 #define NBR_TABLE_CONF_MAX_NEIGHBORS     10
@@ -47,11 +108,27 @@
 #define UIP_CONF_MAX_ROUTES   10
 #endif /* TEST_MORE_ROUTES */
 
-#undef NETSTACK_CONF_RDC
-#define NETSTACK_CONF_RDC     nullrdc_driver
-#undef NULLRDC_CONF_802154_AUTOACK
-#define NULLRDC_CONF_802154_AUTOACK       1
+#ifndef UIP_CONF_BUFFER_SIZE
+#define UIP_CONF_BUFFER_SIZE    600
+#endif
 
+#ifndef UIP_CONF_RECEIVE_WINDOW
+#define UIP_CONF_RECEIVE_WINDOW  60
+#endif
+
+#if !UIP_CONF_IPV6_RPL
+#undef UIP_CONF_ROUTER
+#define UIP_CONF_ROUTER            0
+#endif
+
+#ifndef QUEUEBUF_CONF_NUM
+#define QUEUEBUF_CONF_NUM          5
+#endif
+
+
+
+
+// Define RPL Routing options
 /* Define as minutes */
 #define RPL_CONF_DEFAULT_LIFETIME_UNIT   60
 
@@ -68,54 +145,6 @@
 #undef RPL_CONF_MOP
 #define RPL_CONF_MOP RPL_MOP_NON_STORING /* Mode of operation*/
 #endif /* WITH_NON_STORING */
-
-
-#define IEEE802154_CONF_PANID 0xABCD
-#define RF_CHANNEL 26
-#define CC2538_RF_CONF_CHANNEL RF_CHANNEL
-#define WITH_ADAPTIVESEC 1
-#define NETSTACK_CONF_LLSEC nullsec_driver
-#endif
-#undef AES_128_CONF
-#define AES_128_CONF aes_128_driver
-#define CETIC_6LBR_6LOWPAN_CONTEXT_0 { 0xFD, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
-#define DTLS_PEER_MAX 3
-
-#define DTLS_CONF_CONN_TIMEOUT 10
-
-
-#if !UIP_CONF_IPV6_RPL
-#undef UIP_CONF_ROUTER
-#define UIP_CONF_ROUTER            0
-#endif
-
-#ifndef QUEUEBUF_CONF_NUM
-#define QUEUEBUF_CONF_NUM          5
-#endif
-
-#ifndef UIP_CONF_BUFFER_SIZE
-#if CONTIKI_TARGET_SKY || CONTIKI_TARGET_Z1
-#define UIP_CONF_BUFFER_SIZE    260
-#else
-#define UIP_CONF_BUFFER_SIZE    600
-#endif
-#endif
-
-#ifndef UIP_CONF_RECEIVE_WINDOW
-#define UIP_CONF_RECEIVE_WINDOW  60
-#endif
-
-#ifndef NETSTACK_CONF_MAC
-#define NETSTACK_CONF_MAC     		csma_driver
-#endif
-
-#ifndef NETSTACK_CONF_RDC
-#define NETSTACK_CONF_RDC     		nullrdc_driver
-#endif
-
-#ifndef SKY_CONF_MAX_TX_POWER
-#define SKY_CONF_MAX_TX_POWER 	31
-#endif
 
 #ifndef RPL_CONF_INIT_LINK_METRIC
 #define RPL_CONF_INIT_LINK_METRIC			2
@@ -182,5 +211,4 @@
 
 #endif
 
-#define UIP_DS6_CONF_NO_STATIC_ADDRESS 1
-
+#endif
