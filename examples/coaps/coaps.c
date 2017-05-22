@@ -38,29 +38,35 @@
  *         Michael Morscher <morscher@hm.edu>
  */
 
-// Configuration
+#include "contiki.h"
+
+// General configuration
 #define APP_NAME "Secure CoAP server process"
-#define COAP_SERVICE_PORT 6666
 #define DTLS_DEBUG_LEVEL DTLS_LOG_DEBUG
 
-// Includes
-#include "contiki.h"
-#include <stdio.h>
+// Server configuration
+#define UDP_LOCAL_PORT 6666
 
-#ifdef WITH_TINYDTLS
-#include "dtls-base.h"
-#endif
+// Client configuration
+#define UDP_REMOTE_PORT 7777
+#define MAX_PAYLOAD_LEN 64
+#define SEND_INTERVAL (3 * CLOCK_SECOND)
 
 PROCESS(coaps_process, APP_NAME);
 AUTOSTART_PROCESSES(&coaps_process);
 
-// UDP handling
-#if defined(WITH_CLIENT) || defined(WITH_SERVER)
-static struct uip_udp_conn *server_conn;
+#ifdef WITH_TINYDTLS
+#include "dtls-base.h"
+static dtls_context_t *dtls_context;
 #endif
 
-#ifdef WITH_TINYDTLS
-static dtls_context_t *dtls_context;
+#if defined(WITH_SERVER) || defined(WITH_CLIENT)
+static struct uip_udp_conn *udp_conn;
+#endif
+
+#ifdef WITH_CLIENT
+static struct etimer periodic;
+static session_t session;
 #endif
 
 /* The main thread */
@@ -68,18 +74,38 @@ PROCESS_THREAD(coaps_process, ev, data)
 {
 	PROCESS_BEGIN();
 
-#if defined(WITH_CLIENT) || defined(WITH_SERVER)
-	server_conn = udp_new(NULL, 0, NULL);
-	udp_bind(server_conn, UIP_HTONS(COAP_SERVICE_PORT));
+
+#ifdef WITH_CLIENT
+	// Setup client UDP
+	// Define destination session
+	session.size = sizeof(session.addr);
+	session.port = UIP_HTONS(UDP_REMOTE_PORT);
+	uip_ip6addr(&session.addr,0xfd00,0,0,0,0,0,0,0x0001);
+
+	// Start client UDP connection
+	udp_conn = udp_new(&session.addr, UIP_HTONS(UDP_REMOTE_PORT), NULL);
+	udp_bind(udp_conn, UIP_HTONS(UDP_LOCAL_PORT));
+	PRINTF("Created a connection with the server ");
+	PRINT6ADDR(&udp_conn->ripaddr);
+	PRINTF(" local/remote port %u/%u\n", UIP_HTONS(udp_conn->lport), UIP_HTONS(udp_conn->rport));
+
+	// Start timer
+	etimer_set(&periodic, SEND_INTERVAL);
 #endif
 
+#ifdef WITH_SERVER
+	// Setup server UDP
+	udp_conn = udp_new(NULL, 0, NULL);
+	udp_bind(udp_conn, UIP_HTONS(UDP_LOCAL_PORT));
 #ifdef WITH_YACOAP
 	resource_setup(resources);
 #endif
+#endif
 
 #ifdef WITH_TINYDTLS
+	// Setup DTLS
 	dtls_set_log_level(DTLS_DEBUG_LEVEL);
-	dtls_context = dtls_new_context(server_conn);
+	dtls_context = dtls_new_context(udp_conn);
 
 	if (dtls_context)
 		dtls_set_handler(dtls_context, &dtls_callback);
@@ -93,11 +119,20 @@ PROCESS_THREAD(coaps_process, ev, data)
 
 	while(1) {
 		PROCESS_WAIT_EVENT();
-	    if(ev == tcpip_event) {
+
 #ifdef WITH_TINYDTLS
+	    if(ev == tcpip_event) {
 	    	onUdpPacket(dtls_context);
-#endif
 	    }
+
+#ifdef WITH_CLIENT
+	    uint8_t test = 8;
+	    dtls_write(dtls_context, &session, &test, sizeof(test));
+
+	    if(etimer_expired(&periodic))
+	    	etimer_reset(&periodic);
+#endif
+#endif
 	}
 
 	PROCESS_END();

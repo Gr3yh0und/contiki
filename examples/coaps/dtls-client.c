@@ -40,7 +40,7 @@ int get_psk_info(struct dtls_context_t *ctx,
                }
 
             if (result_length < psk_id_length) {
-                dtls_warn("cannot set psk_identity -- buffer too small\n", type);
+                dtls_warn("cannot set psk_identity -- buffer too small\n");
                 return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
             }
 
@@ -48,11 +48,11 @@ int get_psk_info(struct dtls_context_t *ctx,
             return psk_id_length;
         case DTLS_PSK_KEY:
             if (id_len != psk_id_length || memcmp(psk_id, id, id_len) != 0) {
-                dtls_warn("PSK for unknown id requested, exiting\n", type);
+                dtls_warn("PSK for unknown id requested, exiting\n");
                 return dtls_alert_fatal_create(DTLS_ALERT_ILLEGAL_PARAMETER);
             }
             else if (result_length < psk_key_length) {
-                dtls_warn("cannot set psk -- buffer too small\n", type);
+                dtls_warn("cannot set psk -- buffer too small\n");
                 return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
             }
 

@@ -8,6 +8,8 @@
 #ifndef EXAMPLES_COAPS_DTLS_CLIENT_H_
 #define EXAMPLES_COAPS_DTLS_CLIENT_H_
 
+#include "dtls.h"
+
 int get_psk_info(struct dtls_context_t *ctx,
                         const session_t *session,
                         dtls_credentials_type_t type,
