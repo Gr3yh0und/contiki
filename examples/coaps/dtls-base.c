@@ -49,8 +49,8 @@ int handle_write(struct dtls_context_t *ctx, session_t *session, uint8 *data, si
 /* Called handler function when a new packet is received */
 int handle_read(struct dtls_context_t *context, session_t *session, uint8 *data, size_t length)
 {
-
 #ifdef WITH_YACOAP
+#ifdef WITH_SERVER
 	coap_packet_t requestPacket, responsePacket;
 	uint8 responseBuffer[DTLS_MAX_BUF];
 	size_t responseBufferLength = sizeof(responseBuffer);
@@ -72,6 +72,14 @@ int handle_read(struct dtls_context_t *context, session_t *session, uint8 *data,
 	}
 #endif
 
+#ifdef WITH_CLIENT
+	coap_packet_t packet;
+	coap_parse(data, length, &packet);
+	PRINTF("(COAP) Answer was: %.*s", packet.payload.len, (char *)packet.payload.p);
+	(void) context;
+	(void) session;
+#endif
+#endif
 	return -1;
 }
 

@@ -44,12 +44,9 @@
 #define APP_NAME "Secure CoAP server process"
 #define DTLS_DEBUG_LEVEL DTLS_LOG_DEBUG
 
-// Server configuration
+// Server/Client configuration
 #define UDP_LOCAL_PORT 6666
-
-// Client configuration
 #define UDP_REMOTE_PORT 7777
-#define MAX_PAYLOAD_LEN 64
 #define SEND_INTERVAL (3 * CLOCK_SECOND)
 
 PROCESS(coaps_process, APP_NAME);
@@ -74,7 +71,6 @@ PROCESS_THREAD(coaps_process, ev, data)
 {
 	PROCESS_BEGIN();
 
-
 #ifdef WITH_CLIENT
 	// Setup client UDP
 	// Define destination session
@@ -91,6 +87,17 @@ PROCESS_THREAD(coaps_process, ev, data)
 
 	// Start timer
 	etimer_set(&periodic, SEND_INTERVAL);
+
+#ifdef WITH_YACOAP
+	static coap_resource_path_t path = {1, {"time"}};
+	static coap_resource_t request = {COAP_RDY, COAP_METHOD_GET, COAP_TYPE_CON, NULL, &path, COAP_SET_CONTENTTYPE(COAP_CONTENTTYPE_TXT_PLAIN)};
+	static coap_packet_t req;
+	static int msgid = 42;
+	coap_make_request(msgid, NULL, &request, NULL, 0, &req);
+	static uint8 buf[32];
+	static size_t buflen = sizeof(buf);
+	coap_build(&req, buf, &buflen);
+#endif
 #endif
 
 #ifdef WITH_SERVER
@@ -124,13 +131,12 @@ PROCESS_THREAD(coaps_process, ev, data)
 	    if(ev == tcpip_event) {
 	    	onUdpPacket(dtls_context);
 	    }
-
 #ifdef WITH_CLIENT
-	    uint8_t test = 8;
-	    dtls_write(dtls_context, &session, &test, sizeof(test));
-
 	    if(etimer_expired(&periodic))
+	    {
+	    	dtls_write(dtls_context, &session, buf, buflen);
 	    	etimer_reset(&periodic);
+	    }
 #endif
 #endif
 	}
