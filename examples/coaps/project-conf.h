@@ -35,29 +35,35 @@
 #endif /* WITH_NON_STORING */
 
 
-
-
 // Define 802.15.4 Settings
+#ifndef CONTIKI_RADIODEFAULTS
 #define NETSTACK_CONF_NETWORK sicslowpan_driver
 #define IEEE802154_CONF_PANID 0xABCD
 #define RF_CHANNEL 26
 #define CC2538_RF_CONF_CHANNEL RF_CHANNEL
+#endif
 
 // MAC driver
+#ifdef CONTIKI_MAC_CSMA
 #define NETSTACK_CONF_MAC     		csma_driver
+#endif
+
+#ifdef CONTIKI_MAC_NULL
+#define NETSTACK_CONF_MAC     		nullmac_driver
+#endif
 
 // RDC driver
-#ifdef CONTIKI_CONTIKIMAC
-#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 16
+#ifdef CONTIKI_RDC_CONTIKI
+#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 128
 #define NETSTACK_CONF_RDC     		contikimac_driver
-#else
+#endif
+
+#ifdef CONTIKI_RDC_NULL
 #define NETSTACK_CONF_RDC     		nullrdc_driver
 #undef NULLRDC_CONF_802154_AUTOACK
 #define NULLRDC_CONF_802154_AUTOACK       1
 #endif
 
-//#undef AES_128_CONF
-//#define AES_128_CONF aes_128_driver
 
 // Enable Link Layer Security (LLSEC)
 #ifdef CONTIKI_LLSEC_ACTIVATED
@@ -80,8 +86,6 @@
 #endif
 
 
-
-
 // Energy Modes
 #ifdef CONTIKI_LOWPOWER
 #define ENERGEST_CONF_ON	1
@@ -91,30 +95,25 @@
 #endif
 
 
-
-
 // UIP network stack
 #define UIP_DS6_CONF_NO_STATIC_ADDRESS 1
 
-#undef UIP_CONF_MAX_ROUTES
 #undef NBR_TABLE_CONF_MAX_NEIGHBORS
-#ifdef TEST_MORE_ROUTES
-/* configure number of neighbors and routes */
 #define NBR_TABLE_CONF_MAX_NEIGHBORS     10
-#define UIP_CONF_MAX_ROUTES   30
-#else
-/* configure number of neighbors and routes */
-#define NBR_TABLE_CONF_MAX_NEIGHBORS     10
+
+#undef UIP_CONF_MAX_ROUTES
 #define UIP_CONF_MAX_ROUTES   10
-#endif /* TEST_MORE_ROUTES */
 
-#ifndef UIP_CONF_BUFFER_SIZE
+#define NEIGHBOR_CONF_MAX_NEIGHBORS     12
+
+#undef UIP_CONF_DS6_NBR_NBU
+#define UIP_CONF_DS6_NBR_NBU     12
+
+#undef UIP_CONF_BUFFER_SIZE
 #define UIP_CONF_BUFFER_SIZE    600
-#endif
 
-#ifndef UIP_CONF_RECEIVE_WINDOW
+#undef UIP_CONF_RECEIVE_WINDOW
 #define UIP_CONF_RECEIVE_WINDOW  60
-#endif
 
 #if !UIP_CONF_IPV6_RPL
 #undef UIP_CONF_ROUTER
@@ -124,8 +123,6 @@
 #ifndef QUEUEBUF_CONF_NUM
 #define QUEUEBUF_CONF_NUM          5
 #endif
-
-
 
 
 // Define RPL Routing options
@@ -166,34 +163,10 @@
 
 // Enable DAO-Ack
 #define RPL_CONF_WITH_DAO_ACK       1
-
 #define RPL_CONF_RPL_REPAIR_ON_DAO_NACK    0
-
 #define RPL_CONF_DIO_REFRESH_DAO_ROUTES     0
 
-/* Z1 platform has limited RAM */
-
-#if defined CONTIKI_TARGET_Z1
-
 #define RPL_CONF_MAX_PARENTS_PER_DAG    12
-#define NEIGHBOR_CONF_MAX_NEIGHBORS     12
-
-#ifndef UIP_CONF_DS6_NBR_NBU
-#define UIP_CONF_DS6_NBR_NBU     12
-#endif
-
-#ifndef UIP_CONF_MAX_ROUTES
-#define UIP_CONF_MAX_ROUTES   12
-#endif
-
-#else
-
-#define RPL_CONF_MAX_PARENTS_PER_DAG    24
-#define NEIGHBOR_CONF_MAX_NEIGHBORS     24
-
-#ifndef UIP_CONF_DS6_NBR_NBU
-#define UIP_CONF_DS6_NBR_NBU     24
-#endif
 
 #if RPL_NON_STORING
 #undef UIP_CONF_MAX_ROUTES
@@ -207,8 +180,6 @@
 #ifndef UIP_CONF_MAX_ROUTES
 #define UIP_CONF_MAX_ROUTES   24
 #endif
-#endif
-
 #endif
 
 #endif

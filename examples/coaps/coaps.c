@@ -89,14 +89,24 @@ PROCESS_THREAD(coaps_process, ev, data)
 	etimer_set(&periodic, SEND_INTERVAL);
 
 #ifdef WITH_YACOAP
-	static coap_resource_path_t path = {1, {"time"}};
-	static coap_resource_t request = {COAP_RDY, COAP_METHOD_GET, COAP_TYPE_CON, NULL, &path, COAP_SET_CONTENTTYPE(COAP_CONTENTTYPE_TXT_PLAIN)};
-	static coap_packet_t req;
-	static int msgid = 42;
-	coap_make_request(msgid, NULL, &request, NULL, 0, &req);
-	static uint8 buf[32];
-	static size_t buflen = sizeof(buf);
-	coap_build(&req, buf, &buflen);
+	static coap_packet_t requestPacket;
+	static uint8 messageId = 42;
+	static uint8 buffer[32];
+	static size_t bufferLength = sizeof(buffer);
+
+#ifdef WITH_CLIENT_PUT
+	// PUT light
+	static coap_resource_path_t resourcePath = {1, {"light"}};
+	static coap_resource_t request = {COAP_RDY, COAP_METHOD_PUT, COAP_TYPE_CON, NULL, &resourcePath, COAP_SET_CONTENTTYPE(COAP_CONTENTTYPE_TXT_PLAIN)};
+	coap_make_request(messageId, NULL, &request, &messageId, sizeof(messageId), &requestPacket);
+#else
+	// GET time
+	static coap_resource_path_t resourcePath = {1, {"time"}};
+	static coap_resource_t request = {COAP_RDY, COAP_METHOD_GET, COAP_TYPE_CON, NULL, &resourcePath, COAP_SET_CONTENTTYPE(COAP_CONTENTTYPE_TXT_PLAIN)};
+	coap_make_request(messageId, NULL, &request, NULL, 0, &requestPacket);
+#endif
+
+	coap_build(&requestPacket, buffer, &bufferLength);
 #endif
 #endif
 
@@ -134,7 +144,7 @@ PROCESS_THREAD(coaps_process, ev, data)
 #ifdef WITH_CLIENT
 	    if(etimer_expired(&periodic))
 	    {
-	    	dtls_write(dtls_context, &session, buf, buflen);
+	    	dtls_write(dtls_context, &session, buffer, bufferLength);
 	    	etimer_reset(&periodic);
 	    }
 #endif
