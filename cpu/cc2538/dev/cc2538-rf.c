@@ -50,6 +50,24 @@
 #include "dev/udma.h"
 #include "reg.h"
 
+#ifdef CONTIKI_GPIO_OUTPUT
+#include "leds.h"
+#define LED1_ON GPIO_SET_PIN(GPIO_C_BASE, LEDS_YELLOW)
+#define LED1_OFF GPIO_CLR_PIN(GPIO_C_BASE, LEDS_YELLOW)
+#define LED2_ON GPIO_SET_PIN(GPIO_C_BASE, LEDS_GREEN)
+#define LED2_OFF GPIO_CLR_PIN(GPIO_C_BASE, LEDS_GREEN)
+#else
+#define LED1_ON
+#define LED1_OFF
+#define LED2_ON
+#define LED2_OFF
+#endif
+
+#define MEASUREMENT_TX_ON LED1_ON
+#define MEASUREMENT_TX_OFF LED1_OFF
+#define MEASUREMENT_RX_ON LED2_ON
+#define MEASUREMENT_RX_OFF LED2_OFF
+
 #include <string.h>
 /*---------------------------------------------------------------------------*/
 #define CHECKSUM_LEN 2
@@ -441,6 +459,7 @@ on(void)
     rf_flags |= RX_ACTIVE;
   }
 
+  MEASUREMENT_RX_ON;
   ENERGEST_ON(ENERGEST_TYPE_LISTEN);
   return 1;
 }
@@ -464,6 +483,7 @@ off(void)
 
   rf_flags &= ~RX_ACTIVE;
 
+  MEASUREMENT_RX_OFF;
   ENERGEST_OFF(ENERGEST_TYPE_LISTEN);
   return 1;
 }
@@ -546,6 +566,7 @@ init(void)
 
   rf_flags |= RF_ON;
 
+  MEASUREMENT_RX_ON;
   ENERGEST_ON(ENERGEST_TYPE_LISTEN);
 
   return 1;
@@ -642,6 +663,7 @@ transmit(unsigned short transmit_len)
 
   /* Start the transmission */
   ENERGEST_OFF(ENERGEST_TYPE_LISTEN);
+  MEASUREMENT_TX_ON;
   ENERGEST_ON(ENERGEST_TYPE_TRANSMIT);
 
   CC2538_RF_CSP_ISTXON();
@@ -662,6 +684,7 @@ transmit(unsigned short transmit_len)
     ret = RADIO_TX_OK;
   }
   ENERGEST_OFF(ENERGEST_TYPE_TRANSMIT);
+  MEASUREMENT_TX_OFF;
   ENERGEST_ON(ENERGEST_TYPE_LISTEN);
 
   if(was_off) {

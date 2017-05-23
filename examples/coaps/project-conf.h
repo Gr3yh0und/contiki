@@ -54,7 +54,7 @@
 
 // RDC driver
 #ifdef CONTIKI_RDC_CONTIKI
-#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 128
+#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 8
 #define NETSTACK_CONF_RDC     		contikimac_driver
 #endif
 
@@ -90,7 +90,7 @@
 #ifdef CONTIKI_LOWPOWER
 #define ENERGEST_CONF_ON	1
 #define LPM_CONF_ENABLE     1
-#define LPM_CONF_MAX_PM     2
+#define LPM_CONF_MAX_PM     1
 #define LPM_CONF_STATS      0
 #endif
 
