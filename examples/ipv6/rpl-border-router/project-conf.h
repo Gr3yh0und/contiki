@@ -64,4 +64,54 @@
 #define WEBSERVER_CONF_CFS_CONNS 2
 #endif
 
+// Define 802.15.4 Settings
+#ifndef CONTIKI_RADIODEFAULTS
+#define NETSTACK_CONF_NETWORK sicslowpan_driver
+#define IEEE802154_CONF_PANID 0xABCD
+#define RF_CHANNEL 26
+#define CC2538_RF_CONF_CHANNEL RF_CHANNEL
+#endif
+
+// MAC driver
+#ifdef CONTIKI_MAC_CSMA
+#define NETSTACK_CONF_MAC     		csma_driver
+#endif
+
+#ifdef CONTIKI_MAC_NULL
+#define NETSTACK_CONF_MAC     		nullmac_driver
+#endif
+
+// RDC driver
+#ifdef CONTIKI_RDC_CONTIKI
+#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 8
+#define NETSTACK_CONF_RDC     		contikimac_driver
+#endif
+
+#ifdef CONTIKI_RDC_NULL
+#define NETSTACK_CONF_RDC     		nullrdc_driver
+#undef NULLRDC_CONF_802154_AUTOACK
+#define NULLRDC_CONF_802154_AUTOACK       1
+#endif
+
+
+// Enable Link Layer Security (LLSEC)
+#ifdef CONTIKI_LLSEC_ACTIVATED
+#undef LLSEC802154_CONF_ENABLED
+#define LLSEC802154_CONF_ENABLED          1
+#undef NETSTACK_CONF_FRAMER
+#define NETSTACK_CONF_FRAMER              noncoresec_framer
+#undef NETSTACK_CONF_LLSEC
+#define NETSTACK_CONF_LLSEC               noncoresec_driver
+#undef NONCORESEC_CONF_SEC_LVL
+#define NONCORESEC_CONF_SEC_LVL           7
+
+// Define network wide key
+#define NONCORESEC_CONF_KEY { 0x00 , 0x01 , 0x02 , 0x03 , \
+                              0x04 , 0x05 , 0x06 , 0x07 , \
+                              0x08 , 0x09 , 0x0A , 0x0B , \
+                              0x0C , 0x0D , 0x0E , 0x0F }
+#else
+#define NETSTACK_CONF_LLSEC nullsec_driver
+#endif
+
 #endif /* PROJECT_ROUTER_CONF_H_ */
