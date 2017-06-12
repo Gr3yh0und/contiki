@@ -39,6 +39,7 @@
  */
 
 #include "contiki.h"
+#include "measurement.h"
 
 // General configuration
 #define APP_NAME "Secure CoAP server process"
@@ -70,6 +71,10 @@ static session_t session;
 PROCESS_THREAD(coaps_process, ev, data)
 {
 	PROCESS_BEGIN();
+
+#ifdef GPIO_OUTPUT_ENABLE
+	measurement_init_gpio();
+#endif
 
 #ifdef WITH_CLIENT
 	// Setup client UDP
@@ -144,7 +149,9 @@ PROCESS_THREAD(coaps_process, ev, data)
 #ifdef WITH_CLIENT
 	    if(etimer_expired(&periodic))
 	    {
+	    	MEASUREMENT_DTLS_WRITE_ON;
 	    	dtls_write(dtls_context, &session, buffer, bufferLength);
+	    	MEASUREMENT_DTLS_WRITE_OFF;
 	    	etimer_reset(&periodic);
 	    }
 #endif

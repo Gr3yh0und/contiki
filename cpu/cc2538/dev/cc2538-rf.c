@@ -49,24 +49,7 @@
 #include "dev/sys-ctrl.h"
 #include "dev/udma.h"
 #include "reg.h"
-
-#ifdef CONTIKI_GPIO_OUTPUT
-#include "leds.h"
-#define LED1_ON GPIO_SET_PIN(GPIO_C_BASE, LEDS_YELLOW)
-#define LED1_OFF GPIO_CLR_PIN(GPIO_C_BASE, LEDS_YELLOW)
-#define LED2_ON GPIO_SET_PIN(GPIO_C_BASE, LEDS_GREEN)
-#define LED2_OFF GPIO_CLR_PIN(GPIO_C_BASE, LEDS_GREEN)
-#else
-#define LED1_ON
-#define LED1_OFF
-#define LED2_ON
-#define LED2_OFF
-#endif
-
-#define MEASUREMENT_TX_ON LED1_ON
-#define MEASUREMENT_TX_OFF LED1_OFF
-#define MEASUREMENT_RX_ON LED2_ON
-#define MEASUREMENT_RX_OFF LED2_OFF
+#include "measurement.h"
 
 #include <string.h>
 /*---------------------------------------------------------------------------*/
@@ -419,6 +402,9 @@ get_sfd_timestamp(void)
 static int
 channel_clear(void)
 {
+  // Measure CCA
+  MEASUREMENT_CCA_ON;
+
   int cca;
   uint8_t was_off = 0;
 
@@ -444,6 +430,9 @@ channel_clear(void)
     off();
   }
 
+  // Measure CCA
+  MEASUREMENT_CCA_OFF;
+
   return cca;
 }
 /*---------------------------------------------------------------------------*/
@@ -459,6 +448,7 @@ on(void)
     rf_flags |= RX_ACTIVE;
   }
 
+  // Measure RX
   MEASUREMENT_RX_ON;
   ENERGEST_ON(ENERGEST_TYPE_LISTEN);
   return 1;
@@ -483,6 +473,7 @@ off(void)
 
   rf_flags &= ~RX_ACTIVE;
 
+  // Measure RX
   MEASUREMENT_RX_OFF;
   ENERGEST_OFF(ENERGEST_TYPE_LISTEN);
   return 1;
@@ -566,6 +557,7 @@ init(void)
 
   rf_flags |= RF_ON;
 
+  // Measure ON
   MEASUREMENT_RX_ON;
   ENERGEST_ON(ENERGEST_TYPE_LISTEN);
 
@@ -575,6 +567,9 @@ init(void)
 static int
 prepare(const void *payload, unsigned short payload_len)
 {
+  // Measure prepare function
+  MEASUREMENT_PREPARE_ON;
+
   uint8_t i;
 
   PRINTF("RF: Prepare 0x%02x bytes\n", payload_len + CHECKSUM_LEN);
@@ -625,12 +620,18 @@ prepare(const void *payload, unsigned short payload_len)
   }
   PRINTF("\n");
 
+  // Measure prepare function
+  MEASUREMENT_PREPARE_OFF;
+
   return 0;
 }
 /*---------------------------------------------------------------------------*/
 static int
 transmit(unsigned short transmit_len)
 {
+  // Measure transmit function
+  MEASUREMENT_TRANSMIT_ON;
+
   uint8_t counter;
   int ret = RADIO_TX_ERR;
   rtimer_clock_t t0;
@@ -648,6 +649,8 @@ transmit(unsigned short transmit_len)
   if(send_on_cca) {
     if(channel_clear() == CC2538_RF_CCA_BUSY) {
       RIMESTATS_ADD(contentiondrop);
+      // Measure transmit function
+      MEASUREMENT_TRANSMIT_OFF;
       return RADIO_TX_COLLISION;
     }
   }
@@ -658,10 +661,13 @@ transmit(unsigned short transmit_len)
    */
   if(REG(RFCORE_XREG_FSMSTAT1) & RFCORE_XREG_FSMSTAT1_SFD) {
     RIMESTATS_ADD(contentiondrop);
+    // Measure transmit function
+    MEASUREMENT_TRANSMIT_OFF;
     return RADIO_TX_COLLISION;
   }
 
   /* Start the transmission */
+  MEASUREMENT_RX_OFF;
   ENERGEST_OFF(ENERGEST_TYPE_LISTEN);
   MEASUREMENT_TX_ON;
   ENERGEST_ON(ENERGEST_TYPE_TRANSMIT);
@@ -683,8 +689,9 @@ transmit(unsigned short transmit_len)
     while(REG(RFCORE_XREG_FSMSTAT1) & RFCORE_XREG_FSMSTAT1_TX_ACTIVE);
     ret = RADIO_TX_OK;
   }
-  ENERGEST_OFF(ENERGEST_TYPE_TRANSMIT);
   MEASUREMENT_TX_OFF;
+  ENERGEST_OFF(ENERGEST_TYPE_TRANSMIT);
+  MEASUREMENT_RX_ON;
   ENERGEST_ON(ENERGEST_TYPE_LISTEN);
 
   if(was_off) {
@@ -692,6 +699,9 @@ transmit(unsigned short transmit_len)
   }
 
   RIMESTATS_ADD(lltx);
+
+  // Measure transmit function
+  MEASUREMENT_TRANSMIT_OFF;
 
   return ret;
 }
@@ -706,12 +716,17 @@ send(const void *payload, unsigned short payload_len)
 static int
 read(void *buf, unsigned short bufsize)
 {
+  // Measure read function
+  MEASUREMENT_READ_ON;
+
   uint8_t i;
   uint8_t len;
 
   PRINTF("RF: Read\n");
 
   if((REG(RFCORE_XREG_FSMSTAT1) & RFCORE_XREG_FSMSTAT1_FIFOP) == 0) {
+	// Measure read function
+	MEASUREMENT_READ_OFF;
     return 0;
   }
 
@@ -725,6 +740,8 @@ read(void *buf, unsigned short bufsize)
 
     RIMESTATS_ADD(badsynch);
     CC2538_RF_CSP_ISFLUSHRX();
+    // Measure read function
+    MEASUREMENT_READ_OFF;
     return 0;
   }
 
@@ -733,6 +750,8 @@ read(void *buf, unsigned short bufsize)
 
     RIMESTATS_ADD(tooshort);
     CC2538_RF_CSP_ISFLUSHRX();
+    // Measure read function
+    MEASUREMENT_READ_OFF;
     return 0;
   }
 
@@ -741,6 +760,8 @@ read(void *buf, unsigned short bufsize)
 
     RIMESTATS_ADD(toolong);
     CC2538_RF_CSP_ISFLUSHRX();
+    // Measure read function
+    MEASUREMENT_READ_OFF;
     return 0;
   }
 
@@ -790,6 +811,8 @@ read(void *buf, unsigned short bufsize)
     RIMESTATS_ADD(badcrc);
     PRINTF("RF: Bad CRC\n");
     CC2538_RF_CSP_ISFLUSHRX();
+    // Measure read function
+    MEASUREMENT_READ_OFF;
     return 0;
   }
 
@@ -804,12 +827,17 @@ read(void *buf, unsigned short bufsize)
     }
   }
 
+  // Measure read function
+  MEASUREMENT_READ_OFF;
+
   return len;
 }
 /*---------------------------------------------------------------------------*/
 static int
 receiving_packet(void)
 {
+  // Measure receiving function
+  MEASUREMENT_RECEIVING_ON;
   PRINTF("RF: Receiving\n");
 
   /*
@@ -818,9 +846,15 @@ receiving_packet(void)
    *
    * FSMSTAT1 & (TX_ACTIVE | SFD) == SFD <=> receiving
    */
-  return (REG(RFCORE_XREG_FSMSTAT1)
+
+  int ret;
+  ret = (REG(RFCORE_XREG_FSMSTAT1)
           & (RFCORE_XREG_FSMSTAT1_TX_ACTIVE | RFCORE_XREG_FSMSTAT1_SFD))
          == RFCORE_XREG_FSMSTAT1_SFD;
+
+  // Measure receiving function
+  MEASUREMENT_RECEIVING_OFF;
+  return ret;
 }
 /*---------------------------------------------------------------------------*/
 static int
