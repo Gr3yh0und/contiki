@@ -7,6 +7,15 @@
 
 #include "dtls-base.h"
 
+#ifdef CONTIKI_GPIO_OUTPUT
+#include "leds.h"
+#define KEY_SELECT_ON GPIO_SET_PIN(GPIO_A_BASE, 8)
+#define KEY_SELECT_OFF GPIO_SET_PIN(GPIO_A_BASE, 8)
+#else
+#define KEY_SELECT_ON
+#define KEY_SELECT_OFF
+#endif
+
 #ifdef WITH_TINYDTLS
 /* Definition of executed handlers */
 dtls_handler_t dtls_callback = {
@@ -73,11 +82,13 @@ int handle_read(struct dtls_context_t *context, session_t *session, uint8 *data,
 #endif
 
 #ifdef WITH_CLIENT
+	KEY_SELECT_ON;
 	coap_packet_t packet;
 	coap_parse(data, length, &packet);
 	PRINTF("(COAP) Answer was: %.*s", packet.payload.len, (char *)packet.payload.p);
 	(void) context;
 	(void) session;
+	KEY_SELECT_OFF;
 #endif
 #endif
 	return -1;

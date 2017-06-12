@@ -64,4 +64,8 @@
 #define WEBSERVER_CONF_CFS_CONNS 2
 #endif
 
+#define NETSTACK_CONF_RDC     		nullrdc_driver
+
+
+
 #endif /* PROJECT_ROUTER_CONF_H_ */

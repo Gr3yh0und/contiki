@@ -44,6 +44,12 @@
 #define APP_NAME "Secure CoAP server process"
 #define DTLS_DEBUG_LEVEL DTLS_LOG_DEBUG
 
+#include "leds.h"
+#undef LED0_ON
+#define LED0_ON GPIO_SET_PIN(GPIO_C_BASE, LEDS_RED)
+#undef LED0_OFF
+#define LED0_OFF GPIO_CLR_PIN(GPIO_C_BASE, LEDS_RED)
+
 // Server/Client configuration
 #define UDP_LOCAL_PORT 6666
 #define UDP_REMOTE_PORT 7777
@@ -144,8 +150,11 @@ PROCESS_THREAD(coaps_process, ev, data)
 #ifdef WITH_CLIENT
 	    if(etimer_expired(&periodic))
 	    {
+	    	LED0_ON;
 	    	dtls_write(dtls_context, &session, buffer, bufferLength);
+	    	LED0_OFF;
 	    	etimer_reset(&periodic);
+
 	    }
 #endif
 #endif

@@ -56,17 +56,56 @@
 #define LED1_OFF GPIO_CLR_PIN(GPIO_C_BASE, LEDS_YELLOW)
 #define LED2_ON GPIO_SET_PIN(GPIO_C_BASE, LEDS_GREEN)
 #define LED2_OFF GPIO_CLR_PIN(GPIO_C_BASE, LEDS_GREEN)
+#define LED3_ON GPIO_SET_PIN(GPIO_C_BASE, LEDS_ORANGE)
+#define LED3_OFF GPIO_CLR_PIN(GPIO_C_BASE, LEDS_ORANGE)
+#define KEY_LEFT_ON GPIO_SET_PIN(GPIO_C_BASE, 16)
+#define KEY_LEFT_OFF GPIO_CLR_PIN(GPIO_C_BASE, 16)
+#define KEY_RIGHT_ON GPIO_SET_PIN(GPIO_C_BASE, 32)
+#define KEY_RIGHT_OFF GPIO_CLR_PIN(GPIO_C_BASE, 32)
+#define KEY_UP_ON GPIO_SET_PIN(GPIO_C_BASE, 64)
+#define KEY_UP_OFF GPIO_CLR_PIN(GPIO_C_BASE, 64)
+#define KEY_DOWN_ON GPIO_SET_PIN(GPIO_C_BASE, 128)
+#define KEY_DOWN_OFF GPIO_CLR_PIN(GPIO_C_BASE, 128)
+#define KEY_SELECT_ON GPIO_SET_PIN(GPIO_A_BASE, 8)
+#define KEY_SELECT_OFF GPIO_SET_PIN(GPIO_A_BASE, 8)
 #else
 #define LED1_ON
 #define LED1_OFF
 #define LED2_ON
 #define LED2_OFF
+#define LED3_ON
+#define LED3_OFF
+#define KEY_LEFT_ON
+#define KEY_LEFT_OFF
+#define KEY_RIGHT_ON
+#define KEY_RIGHT_OFF
+#define KEY_UP_ON
+#define KEY_UP_OFF
+#define KEY_DOWN_ON
+#define KEY_DOWN_OFF
+#define KEY_SELECT_ON
+#define KEY_SELECT_OFF
 #endif
 
-#define MEASUREMENT_TX_ON LED1_ON
-#define MEASUREMENT_TX_OFF LED1_OFF
-#define MEASUREMENT_RX_ON LED2_ON
-#define MEASUREMENT_RX_OFF LED2_OFF
+#define MEASUREMENT_RX_ON LED1_ON
+#define MEASUREMENT_RX_OFF LED1_OFF
+#define MEASUREMENT_CCA_ON LED2_ON
+#define MEASUREMENT_CCA_OFF LED2_OFF
+#define MEASUREMENT_TX_ON LED3_ON
+#define MEASUREMENT_TX_OFF LED3_OFF
+
+#define MEASUREMENT_PREPARE_ON KEY_LEFT_ON
+#define MEASUREMENT_PREPARE_OFF KEY_LEFT_OFF
+#define MEASUREMENT_SEND_ON KEY_RIGHT_ON
+#define MEASUREMENT_SEND_OFF KEY_RIGHT_OFF
+#define MEASUREMENT_TRANSMIT_ON KEY_UP_ON
+#define MEASUREMENT_TRANSMIT_OFF KEY_UP_OFF
+#define MEASUREMENT_READ_ON KEY_DOWN_ON
+#define MEASUREMENT_READ_OFF KEY_DOWN_OFF
+
+#define MEASUREMENT_X_ON KEY_SELECT_ON
+#define MEASUREMENT_X_OFF KEY_SELECT_OFF
+
 
 #include <string.h>
 /*---------------------------------------------------------------------------*/
@@ -419,6 +458,7 @@ get_sfd_timestamp(void)
 static int
 channel_clear(void)
 {
+	MEASUREMENT_CCA_ON;
   int cca;
   uint8_t was_off = 0;
 
@@ -443,6 +483,7 @@ channel_clear(void)
   if(was_off) {
     off();
   }
+  MEASUREMENT_CCA_OFF;
 
   return cca;
 }
@@ -577,6 +618,7 @@ prepare(const void *payload, unsigned short payload_len)
 {
   uint8_t i;
 
+  MEASUREMENT_PREPARE_ON;
   PRINTF("RF: Prepare 0x%02x bytes\n", payload_len + CHECKSUM_LEN);
 
   /*
@@ -624,6 +666,7 @@ prepare(const void *payload, unsigned short payload_len)
     }
   }
   PRINTF("\n");
+  MEASUREMENT_PREPARE_OFF;
 
   return 0;
 }
@@ -631,6 +674,7 @@ prepare(const void *payload, unsigned short payload_len)
 static int
 transmit(unsigned short transmit_len)
 {
+	MEASUREMENT_TRANSMIT_ON;
   uint8_t counter;
   int ret = RADIO_TX_ERR;
   rtimer_clock_t t0;
@@ -663,8 +707,9 @@ transmit(unsigned short transmit_len)
 
   /* Start the transmission */
   ENERGEST_OFF(ENERGEST_TYPE_LISTEN);
-  MEASUREMENT_TX_ON;
+  MEASUREMENT_RX_OFF;
   ENERGEST_ON(ENERGEST_TYPE_TRANSMIT);
+  MEASUREMENT_TX_ON;
 
   CC2538_RF_CSP_ISTXON();
 
@@ -686,13 +731,14 @@ transmit(unsigned short transmit_len)
   ENERGEST_OFF(ENERGEST_TYPE_TRANSMIT);
   MEASUREMENT_TX_OFF;
   ENERGEST_ON(ENERGEST_TYPE_LISTEN);
+  MEASUREMENT_RX_ON;
 
   if(was_off) {
     off();
   }
 
   RIMESTATS_ADD(lltx);
-
+MEASUREMENT_TRANSMIT_OFF;
   return ret;
 }
 /*---------------------------------------------------------------------------*/
@@ -709,9 +755,12 @@ read(void *buf, unsigned short bufsize)
   uint8_t i;
   uint8_t len;
 
+MEASUREMENT_READ_ON;
+
   PRINTF("RF: Read\n");
 
   if((REG(RFCORE_XREG_FSMSTAT1) & RFCORE_XREG_FSMSTAT1_FIFOP) == 0) {
+	  MEASUREMENT_READ_OFF;
     return 0;
   }
 
@@ -725,6 +774,7 @@ read(void *buf, unsigned short bufsize)
 
     RIMESTATS_ADD(badsynch);
     CC2538_RF_CSP_ISFLUSHRX();
+    MEASUREMENT_READ_OFF;
     return 0;
   }
 
@@ -733,6 +783,7 @@ read(void *buf, unsigned short bufsize)
 
     RIMESTATS_ADD(tooshort);
     CC2538_RF_CSP_ISFLUSHRX();
+    MEASUREMENT_READ_OFF;
     return 0;
   }
 
@@ -741,6 +792,7 @@ read(void *buf, unsigned short bufsize)
 
     RIMESTATS_ADD(toolong);
     CC2538_RF_CSP_ISFLUSHRX();
+    MEASUREMENT_READ_OFF;
     return 0;
   }
 
@@ -790,6 +842,7 @@ read(void *buf, unsigned short bufsize)
     RIMESTATS_ADD(badcrc);
     PRINTF("RF: Bad CRC\n");
     CC2538_RF_CSP_ISFLUSHRX();
+    MEASUREMENT_READ_OFF;
     return 0;
   }
 
@@ -804,6 +857,7 @@ read(void *buf, unsigned short bufsize)
     }
   }
 
+  MEASUREMENT_READ_OFF;
   return len;
 }
 /*---------------------------------------------------------------------------*/
