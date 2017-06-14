@@ -49,11 +49,13 @@ extern coap_resource_t resources[];
 #define DTLS_PSK_KEY_VALUE_LENGTH 9
 #endif
 
+#ifdef WITH_TINYDTLS
 dtls_handler_t dtls_callback;
 
 void onUdpPacket(dtls_context_t *ctx);
 int handle_write(struct dtls_context_t *ctx, session_t *session, uint8 *data, size_t len);
 int handle_read(struct dtls_context_t *context, session_t *session, uint8 *data, size_t length);
 int handle_event(struct dtls_context_t *ctx, session_t *session, dtls_alert_level_t level, unsigned short code);
+#endif
 
 #endif /* EXAMPLES_COAPS_DTLS_BASE_H_ */

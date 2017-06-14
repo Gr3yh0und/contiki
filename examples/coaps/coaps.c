@@ -48,7 +48,7 @@
 // Server/Client configuration
 #define UDP_LOCAL_PORT 6666
 #define UDP_REMOTE_PORT 7777
-#define SEND_INTERVAL (3 * CLOCK_SECOND)
+#define SEND_INTERVAL (1 * CLOCK_SECOND)
 
 PROCESS(coaps_process, APP_NAME);
 AUTOSTART_PROCESSES(&coaps_process);
@@ -67,10 +67,32 @@ static struct etimer periodic;
 static session_t session;
 #endif
 
+static void
+print_local_addresses(void)
+{
+  int i;
+  uint8_t state;
+
+  PRINTF("Server IPv6 addresses: ");
+  for(i = 0; i < UIP_DS6_ADDR_NB; i++) {
+    state = uip_ds6_if.addr_list[i].state;
+    if(state == ADDR_TENTATIVE || state == ADDR_PREFERRED) {
+      PRINT6ADDR(&uip_ds6_if.addr_list[i].ipaddr);
+      PRINTF("\n");
+      /* hack to make address "final" */
+      if (state == ADDR_TENTATIVE) {
+	uip_ds6_if.addr_list[i].state = ADDR_PREFERRED;
+      }
+    }
+  }
+}
+
 /* The main thread */
 PROCESS_THREAD(coaps_process, ev, data)
 {
 	PROCESS_BEGIN();
+
+	print_local_addresses();
 
 #ifdef GPIO_OUTPUT_ENABLE
 	measurement_init_gpio();
@@ -93,11 +115,12 @@ PROCESS_THREAD(coaps_process, ev, data)
 	// Start timer
 	etimer_set(&periodic, SEND_INTERVAL);
 
+	static uint8 buffer[32];
+	static size_t bufferLength = sizeof(buffer);
+
 #ifdef WITH_YACOAP
 	static coap_packet_t requestPacket;
 	static uint8 messageId = 42;
-	static uint8 buffer[32];
-	static size_t bufferLength = sizeof(buffer);
 
 #ifdef WITH_CLIENT_PUT
 	// PUT light
@@ -134,7 +157,7 @@ PROCESS_THREAD(coaps_process, ev, data)
 
 	dtls_init();
 	if (!dtls_context) {
-		dsrv_log(DTLS_LOG_EMERG, "cannot create context\n");
+		PRINTF("cannot create context\n");
 	    PROCESS_EXIT();
 	}
 #endif
@@ -149,6 +172,7 @@ PROCESS_THREAD(coaps_process, ev, data)
 #ifdef WITH_CLIENT
 	    if(etimer_expired(&periodic))
 	    {
+	    	PRINTF(".");
 	    	MEASUREMENT_DTLS_WRITE_ON;
 	    	dtls_write(dtls_context, &session, buffer, bufferLength);
 	    	MEASUREMENT_DTLS_WRITE_OFF;
