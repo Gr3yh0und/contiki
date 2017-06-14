@@ -133,3 +133,5 @@ LOG_OPENOCD
 examples/coaps/burn\.seg
 
 examples/coaps/build\.old
+
+examples/coaps/coaps\.openmote-cc2538
