@@ -173,6 +173,7 @@ PROCESS_THREAD(coaps_process, ev, data)
 	    if(etimer_expired(&periodic))
 	    {
 	    	PRINTF(".");
+	    	MEASUREMENT_DTLS_TOTAL_ON;
 	    	MEASUREMENT_DTLS_WRITE_ON;
 	    	dtls_write(dtls_context, &session, buffer, bufferLength);
 	    	MEASUREMENT_DTLS_WRITE_OFF;

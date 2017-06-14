@@ -6,6 +6,7 @@
  */
 
 #include "dtls-base.h"
+#include "measurement.h"
 
 #ifdef WITH_TINYDTLS
 /* Definition of executed handlers */
@@ -21,6 +22,7 @@ dtls_handler_t dtls_callback = {
 /* Handler called when a new raw UDP packet is received */
 void onUdpPacket(dtls_context_t *ctx)
 {
+	MEASUREMENT_DTLS_READ_ON;
 	session_t session;
 
 	if(uip_newdata()) {
@@ -29,6 +31,7 @@ void onUdpPacket(dtls_context_t *ctx)
 		session.port = UIP_UDP_BUF->srcport;
 		dtls_handle_message(ctx, &session, uip_appdata, uip_datalen());
 	}
+	MEASUREMENT_DTLS_READ_OFF;
 }
 
 /* Called handler function when a new raw packet should be sent */
@@ -73,6 +76,7 @@ int handle_read(struct dtls_context_t *context, session_t *session, uint8 *data,
 #endif
 
 #ifdef WITH_CLIENT
+	MEASUREMENT_DTLS_TOTAL_OFF;
 	coap_packet_t packet;
 	coap_parse(data, length, &packet);
 	PRINTF("(COAP) Answer was: %.*s", packet.payload.len, (char *)packet.payload.p);
