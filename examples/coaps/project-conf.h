@@ -96,32 +96,32 @@
 
 
 // UIP network stack
-#define UIP_DS6_CONF_NO_STATIC_ADDRESS 1
+#define UIP_DS6_CONF_NO_STATIC_ADDRESS 		1
 
 #undef NBR_TABLE_CONF_MAX_NEIGHBORS
-#define NBR_TABLE_CONF_MAX_NEIGHBORS     10
+#define NBR_TABLE_CONF_MAX_NEIGHBORS     	5
 
 #undef UIP_CONF_MAX_ROUTES
-#define UIP_CONF_MAX_ROUTES   10
+#define UIP_CONF_MAX_ROUTES   				5
 
-#define NEIGHBOR_CONF_MAX_NEIGHBORS     12
+#define NEIGHBOR_CONF_MAX_NEIGHBORS     	5
 
 #undef UIP_CONF_DS6_NBR_NBU
-#define UIP_CONF_DS6_NBR_NBU     12
+#define UIP_CONF_DS6_NBR_NBU     			5
 
 #undef UIP_CONF_BUFFER_SIZE
-#define UIP_CONF_BUFFER_SIZE    600
+#define UIP_CONF_BUFFER_SIZE    			512
 
 #undef UIP_CONF_RECEIVE_WINDOW
-#define UIP_CONF_RECEIVE_WINDOW  60
+#define UIP_CONF_RECEIVE_WINDOW  			60
 
 #if !UIP_CONF_IPV6_RPL
 #undef UIP_CONF_ROUTER
-#define UIP_CONF_ROUTER            0
+#define UIP_CONF_ROUTER            			0
 #endif
 
 #ifndef QUEUEBUF_CONF_NUM
-#define QUEUEBUF_CONF_NUM          5
+#define QUEUEBUF_CONF_NUM          			5
 #endif
 
 
@@ -142,6 +142,20 @@
 #undef RPL_CONF_MOP
 #define RPL_CONF_MOP RPL_MOP_NON_STORING /* Mode of operation*/
 #endif /* WITH_NON_STORING */
+
+#if RPL_NON_STORING
+#undef UIP_CONF_MAX_ROUTES
+#define UIP_CONF_MAX_ROUTES 0
+#ifndef RPL_NS_CONF_LINK_NUM
+#define RPL_NS_CONF_LINK_NUM   24
+#endif
+#else
+#undef RPL_NS_CONF_LINK_NUM
+#define RPL_NS_CONF_LINK_NUM   0
+#ifndef UIP_CONF_MAX_ROUTES
+#define UIP_CONF_MAX_ROUTES   24
+#endif
+#endif
 
 #ifndef RPL_CONF_INIT_LINK_METRIC
 #define RPL_CONF_INIT_LINK_METRIC			2
@@ -168,18 +182,6 @@
 
 #define RPL_CONF_MAX_PARENTS_PER_DAG    12
 
-#if RPL_NON_STORING
-#undef UIP_CONF_MAX_ROUTES
-#define UIP_CONF_MAX_ROUTES 0
-#ifndef RPL_NS_CONF_LINK_NUM
-#define RPL_NS_CONF_LINK_NUM   24
-#endif
-#else
-#undef RPL_NS_CONF_LINK_NUM
-#define RPL_NS_CONF_LINK_NUM   0
-#ifndef UIP_CONF_MAX_ROUTES
-#define UIP_CONF_MAX_ROUTES   24
-#endif
-#endif
+
 
 #endif
