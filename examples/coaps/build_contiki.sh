@@ -30,7 +30,7 @@ else
 	mv coaps.bin coaps-contiki-cc2538dk.bin
 fi
 echo "OpenMote:"
-make -j$THREADS TARGET=openmote-cc2538
+make -j$THREADS TARGET=openmote-cc2538 BOARD_REVISION=REV_A1
 if [[ $? != 0 ]]; then
 	exit 255
 else
