@@ -39,27 +39,22 @@
  */
 
 #include "contiki.h"
-#include "measurement.h"
 
 // General configuration
 #define APP_NAME "Secure CoAP server process"
-#define DTLS_DEBUG_LEVEL DTLS_LOG_DEBUG
-
-// Server/Client configuration
-#define UDP_LOCAL_PORT 6666
-#define UDP_REMOTE_PORT 7777
 #define SEND_INTERVAL (1 * CLOCK_SECOND)
 
 PROCESS(coaps_process, APP_NAME);
 AUTOSTART_PROCESSES(&coaps_process);
 
-#ifdef WITH_TINYDTLS
 #include "dtls-base.h"
-static dtls_context_t *dtls_context;
+
+#ifdef WITH_TINYDTLS
+extern dtls_context_t *dtls_context;
 #endif
 
 #if defined(WITH_SERVER) || defined(WITH_CLIENT)
-static struct uip_udp_conn *udp_conn;
+extern struct uip_udp_conn *udp_conn;
 #endif
 
 #ifdef WITH_CLIENT
@@ -67,32 +62,27 @@ static struct etimer periodic;
 static session_t session;
 #endif
 
-static void
-print_local_addresses(void)
-{
-  int i;
-  uint8_t state;
-
-  PRINTF("Server IPv6 addresses: ");
-  for(i = 0; i < UIP_DS6_ADDR_NB; i++) {
-    state = uip_ds6_if.addr_list[i].state;
-    if(state == ADDR_TENTATIVE || state == ADDR_PREFERRED) {
-      PRINT6ADDR(&uip_ds6_if.addr_list[i].ipaddr);
-      PRINTF("\n");
-      /* hack to make address "final" */
-      if (state == ADDR_TENTATIVE) {
-	uip_ds6_if.addr_list[i].state = ADDR_PREFERRED;
-      }
-    }
-  }
-}
-
 /* The main thread */
 PROCESS_THREAD(coaps_process, ev, data)
 {
 	PROCESS_BEGIN();
 
-	print_local_addresses();
+#ifdef DEBUG_LOG
+	int i;
+	uint8_t state;
+	PRINTF("Server IPv6 addresses: ");
+	for(i = 0; i < UIP_DS6_ADDR_NB; i++) {
+		state = uip_ds6_if.addr_list[i].state;
+		if(state == ADDR_TENTATIVE || state == ADDR_PREFERRED) {
+			PRINT6ADDR(&uip_ds6_if.addr_list[i].ipaddr);
+			PRINTF("\n");
+			/* hack to make address "final" */
+			if (state == ADDR_TENTATIVE) {
+				uip_ds6_if.addr_list[i].state = ADDR_PREFERRED;
+			}
+		}
+	}
+#endif
 
 #ifdef GPIO_OUTPUT_ENABLE
 	measurement_init_gpio();
@@ -140,6 +130,7 @@ PROCESS_THREAD(coaps_process, ev, data)
 
 #ifdef WITH_SERVER
 	// Setup server UDP
+	PRINTF("Starting UDP server...\n");
 	udp_conn = udp_new(NULL, 0, NULL);
 	udp_bind(udp_conn, UIP_HTONS(UDP_LOCAL_PORT));
 #ifdef WITH_YACOAP
@@ -165,10 +156,10 @@ PROCESS_THREAD(coaps_process, ev, data)
 	while(1) {
 		PROCESS_WAIT_EVENT();
 
-#ifdef WITH_TINYDTLS
-	    if(ev == tcpip_event) {
-	    	onUdpPacket(dtls_context);
-	    }
+		if(ev == tcpip_event) {
+			read_packet();
+		}
+
 #ifdef WITH_CLIENT
 	    if(etimer_expired(&periodic))
 	    {
@@ -179,7 +170,6 @@ PROCESS_THREAD(coaps_process, ev, data)
 	    	MEASUREMENT_DTLS_WRITE_OFF;
 	    	etimer_reset(&periodic);
 	    }
-#endif
 #endif
 	}
 

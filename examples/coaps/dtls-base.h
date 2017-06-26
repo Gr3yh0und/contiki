@@ -8,23 +8,46 @@
 #ifndef EXAMPLES_COAPS_DTLS_BASE_H_
 #define EXAMPLES_COAPS_DTLS_BASE_H_
 
+#include "contiki-net.h"
+
+#define DEBUG DEBUG_PRINT
+#include "net/ip/uip-debug.h"
+
+#include "measurement.h"
+
 #ifdef WITH_TINYDTLS
+#include "dtls.h"
+#include "dtls_debug.h"
+
 #ifdef WITH_SERVER
 #include "dtls-server.h"
 #endif
 #ifdef WITH_CLIENT
 #include "dtls-client.h"
 #endif
-#include "dtls.h"
-#include "dtls_debug.h"
 #endif
 
 #ifdef WITH_YACOAP
 #include "coap.h"
 #endif
 
+// Server/Client configuration
+#define UDP_LOCAL_PORT   6666
+#define UDP_REMOTE_PORT  7777
+#define DTLS_DEBUG_LEVEL DTLS_LOG_DEBUG
+
 #define UIP_IP_BUF   ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
 #define UIP_UDP_BUF  ((struct uip_udp_hdr *)&uip_buf[UIP_LLIPH_LEN])
+
+#ifndef DTLS_MAX_BUF
+#define DTLS_MAX_BUF 100
+#endif
+
+#ifndef DEBUG_LOG
+#define PRINTF(...)
+#define PRINT6ADDR(addr)
+#define PRINTLLADDR(addr)
+#endif
 
 // YaCoAP variables
 #ifdef WITH_YACOAP
@@ -49,10 +72,11 @@ extern coap_resource_t resources[];
 #define DTLS_PSK_KEY_VALUE_LENGTH 9
 #endif
 
+void read_packet();
+
 #ifdef WITH_TINYDTLS
 dtls_handler_t dtls_callback;
 
-void onUdpPacket(dtls_context_t *ctx);
 int handle_write(struct dtls_context_t *ctx, session_t *session, uint8 *data, size_t len);
 int handle_read(struct dtls_context_t *context, session_t *session, uint8 *data, size_t length);
 int handle_event(struct dtls_context_t *ctx, session_t *session, dtls_alert_level_t level, unsigned short code);

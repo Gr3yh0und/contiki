@@ -6,9 +6,14 @@
  */
 
 #include "dtls-base.h"
-#include "measurement.h"
+
+#if defined(WITH_SERVER) || defined(WITH_CLIENT)
+struct uip_udp_conn *udp_conn;
+#endif
 
 #ifdef WITH_TINYDTLS
+dtls_context_t *dtls_context;
+
 /* Definition of executed handlers */
 dtls_handler_t dtls_callback = {
   .write = handle_write,
@@ -18,21 +23,6 @@ dtls_handler_t dtls_callback = {
   .get_psk_info = get_psk_info,
 #endif
 };
-
-/* Handler called when a new raw UDP packet is received */
-void onUdpPacket(dtls_context_t *ctx)
-{
-	MEASUREMENT_DTLS_READ_ON;
-	session_t session;
-
-	if(uip_newdata()) {
-		dtls_session_init(&session);
-		uip_ipaddr_copy(&session.addr, &UIP_IP_BUF->srcipaddr);
-		session.port = UIP_UDP_BUF->srcport;
-		dtls_handle_message(ctx, &session, uip_appdata, uip_datalen());
-	}
-	MEASUREMENT_DTLS_READ_OFF;
-}
 
 /* Called handler function when a new raw packet should be sent */
 int handle_write(struct dtls_context_t *ctx, session_t *session, uint8 *data, size_t len)
@@ -55,7 +45,7 @@ int handle_read(struct dtls_context_t *context, session_t *session, uint8 *data,
 #ifdef WITH_YACOAP
 #ifdef WITH_SERVER
 	coap_packet_t requestPacket, responsePacket;
-	uint8 responseBuffer[DTLS_MAX_BUF];
+	uint8_t responseBuffer[DTLS_MAX_BUF];
 	size_t responseBufferLength = sizeof(responseBuffer);
 
 	if ((coap_parse(data, length, &requestPacket)) < COAP_ERR)
@@ -69,8 +59,8 @@ int handle_read(struct dtls_context_t *context, session_t *session, uint8 *data,
 #ifdef WITH_TINYDTLS
 			// Send response packet decrypted over DTLS
 			dtls_write(context, session, responseBuffer, responseBufferLength);
-			return 0;
 #endif
+			return 0;
 		}
 	}
 #endif
@@ -107,5 +97,49 @@ int handle_event(struct dtls_context_t *ctx, session_t *session, dtls_alert_leve
 	(void) level;
 	(void) code;
 	return 0;
+}
+#endif
+
+#if defined(WITH_CLIENT) || defined(WITH_SERVER)
+/* Handler called when a new raw UDP packet is received */
+void read_packet()
+{
+	MEASUREMENT_DTLS_READ_ON;
+
+#ifdef WITH_TINYDTLS
+	session_t session;
+	if(uip_newdata()) {
+		dtls_session_init(&session);
+		uip_ipaddr_copy(&session.addr, &UIP_IP_BUF->srcipaddr);
+		session.port = UIP_UDP_BUF->srcport;
+		dtls_handle_message(dtls_context, &session, uip_appdata, uip_datalen());
+	}
+#else
+	if(uip_newdata()) {
+		PRINTF("Received CoAP request...\n");
+
+		coap_packet_t requestPacket, responsePacket;
+		uint8_t responseBuffer[DTLS_MAX_BUF];
+		size_t responseBufferLength = sizeof(responseBuffer);
+
+		if ((coap_parse(uip_appdata, uip_datalen(), &requestPacket)) < COAP_ERR)
+		{
+			// Get data from resources
+			coap_handle_request(resources, &requestPacket, &responsePacket);
+
+			// Build response packet
+			if ((coap_build(&responsePacket, responseBuffer, &responseBufferLength)) < COAP_ERR)
+			{
+				// Send response packet
+				uip_ipaddr_copy(&udp_conn->ripaddr, &UIP_IP_BUF->srcipaddr);
+				udp_conn->rport = UIP_UDP_BUF->srcport;
+				uip_udp_packet_send(udp_conn, responseBuffer, responseBufferLength);
+				uip_create_unspecified(&udp_conn->ripaddr);
+			}
+		}
+	}
+#endif
+
+	MEASUREMENT_DTLS_READ_OFF;
 }
 #endif
