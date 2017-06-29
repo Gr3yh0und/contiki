@@ -567,9 +567,6 @@ init(void)
 static int
 prepare(const void *payload, unsigned short payload_len)
 {
-  // Measure prepare function
-  MEASUREMENT_PREPARE_ON;
-
   uint8_t i;
 
   PRINTF("RF: Prepare 0x%02x bytes\n", payload_len + CHECKSUM_LEN);
@@ -619,9 +616,6 @@ prepare(const void *payload, unsigned short payload_len)
     }
   }
   PRINTF("\n");
-
-  // Measure prepare function
-  MEASUREMENT_PREPARE_OFF;
 
   return 0;
 }
@@ -836,8 +830,6 @@ read(void *buf, unsigned short bufsize)
 static int
 receiving_packet(void)
 {
-  // Measure receiving function
-  MEASUREMENT_RECEIVING_ON;
   PRINTF("RF: Receiving\n");
 
   /*
@@ -852,8 +844,6 @@ receiving_packet(void)
           & (RFCORE_XREG_FSMSTAT1_TX_ACTIVE | RFCORE_XREG_FSMSTAT1_SFD))
          == RFCORE_XREG_FSMSTAT1_SFD;
 
-  // Measure receiving function
-  MEASUREMENT_RECEIVING_OFF;
   return ret;
 }
 /*---------------------------------------------------------------------------*/
