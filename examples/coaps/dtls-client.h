@@ -8,7 +8,7 @@
 #ifndef EXAMPLES_COAPS_DTLS_CLIENT_H_
 #define EXAMPLES_COAPS_DTLS_CLIENT_H_
 
-#if defined(WITH_TINYDTLS) && defined(DTLS_PSK)
+#ifdef WITH_TINYDTLS
 #include "dtls-base.h"
 int get_psk_info(struct dtls_context_t *ctx,
                         const session_t *session,
