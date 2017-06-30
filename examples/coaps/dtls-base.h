@@ -31,17 +31,16 @@
 #include "coap.h"
 #endif
 
-// Server/Client configuration
+// Server / Client configuration
 #define UDP_LOCAL_PORT   6666
 #define UDP_REMOTE_PORT  7777
 #define DTLS_DEBUG_LEVEL DTLS_LOG_DEBUG
-
-#define UIP_IP_BUF   ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
-#define UIP_UDP_BUF  ((struct uip_udp_hdr *)&uip_buf[UIP_LLIPH_LEN])
-
 #ifndef DTLS_MAX_BUF
 #define DTLS_MAX_BUF 100
 #endif
+
+#define UIP_IP_BUF   ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
+#define UIP_UDP_BUF  ((struct uip_udp_hdr *)&uip_buf[UIP_LLIPH_LEN])
 
 #ifndef DEBUG_LOG
 #define PRINTF(...)
@@ -76,7 +75,6 @@ void read_packet();
 
 #ifdef WITH_TINYDTLS
 dtls_handler_t dtls_callback;
-
 int handle_write(struct dtls_context_t *ctx, session_t *session, uint8 *data, size_t len);
 int handle_read(struct dtls_context_t *context, session_t *session, uint8 *data, size_t length);
 int handle_event(struct dtls_context_t *ctx, session_t *session, dtls_alert_level_t level, unsigned short code);

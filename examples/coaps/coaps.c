@@ -67,6 +67,7 @@ PROCESS_THREAD(coaps_process, ev, data)
 {
 	PROCESS_BEGIN();
 
+	// Print local IP adresses
 #ifdef DEBUG_LOG
 	int i;
 	uint8_t state;
@@ -84,6 +85,7 @@ PROCESS_THREAD(coaps_process, ev, data)
 	}
 #endif
 
+	// Initialise GPIO measurement
 #ifdef GPIO_OUTPUT_ENABLE
 	measurement_init_gpio();
 #endif
@@ -98,7 +100,7 @@ PROCESS_THREAD(coaps_process, ev, data)
 	// Start client UDP connection
 	udp_conn = udp_new(&session.addr, UIP_HTONS(UDP_REMOTE_PORT), NULL);
 	udp_bind(udp_conn, UIP_HTONS(UDP_LOCAL_PORT));
-	PRINTF("Created a connection with the server ");
+	PRINTF("Trying to create a connection with the server ");
 	PRINT6ADDR(&udp_conn->ripaddr);
 	PRINTF(" local/remote port %u/%u\n", UIP_HTONS(udp_conn->lport), UIP_HTONS(udp_conn->rport));
 
@@ -156,6 +158,7 @@ PROCESS_THREAD(coaps_process, ev, data)
 	while(1) {
 		PROCESS_WAIT_EVENT();
 
+		// Wait for incoming packet
 		if(ev == tcpip_event) {
 			read_packet();
 		}
@@ -163,11 +166,13 @@ PROCESS_THREAD(coaps_process, ev, data)
 #ifdef WITH_CLIENT
 	    if(etimer_expired(&periodic))
 	    {
-	    	PRINTF(".");
+	    	// Start sending to server
 	    	MEASUREMENT_DTLS_TOTAL_ON;
 	    	MEASUREMENT_DTLS_WRITE_ON;
 	    	dtls_write(dtls_context, &session, buffer, bufferLength);
 	    	MEASUREMENT_DTLS_WRITE_OFF;
+
+	    	// Reset timer again
 	    	etimer_reset(&periodic);
 	    }
 #endif

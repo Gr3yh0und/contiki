@@ -31,11 +31,11 @@
 #define PROJECT_CONF_H_
 
 #ifndef WITH_NON_STORING
-#define WITH_NON_STORING 0 /* Set this to run with non-storing mode */
+// Set this to run with non-storing mode
+#define WITH_NON_STORING 0
 #endif /* WITH_NON_STORING */
 
-
-// Define 802.15.4 Settings
+// Define default 802.15.4 Settings
 #ifndef CONTIKI_RADIODEFAULTS
 #define NETSTACK_CONF_NETWORK sicslowpan_driver
 #define IEEE802154_CONF_PANID 0xABCD
@@ -45,37 +45,41 @@
 #endif
 
 // MAC driver
+// CSMA
 #ifdef CONTIKI_MAC_CSMA
-#define NETSTACK_CONF_MAC     		csma_driver
+#define NETSTACK_CONF_MAC     					csma_driver
 #endif
 
+// NullMAC
 #ifdef CONTIKI_MAC_NULL
-#define NETSTACK_CONF_MAC     		nullmac_driver
+#define NETSTACK_CONF_MAC     					nullmac_driver
 #endif
 
 // RDC driver
+// ContikiMAC
 #ifdef CONTIKI_RDC_CONTIKI
-#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 8
-#define NETSTACK_CONF_RDC     		contikimac_driver
+#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 	8
+#define NETSTACK_CONF_RDC     					contikimac_driver
 #endif
 
+// NullRDC
 #ifdef CONTIKI_RDC_NULL
-#define NETSTACK_CONF_RDC     		nullrdc_driver
+#define NETSTACK_CONF_RDC     					nullrdc_driver
 #undef NULLRDC_CONF_802154_AUTOACK
-#define NULLRDC_CONF_802154_AUTOACK       1
+#define NULLRDC_CONF_802154_AUTOACK     		1
 #endif
 
 
-// Enable Link Layer Security (LLSEC)
+// 802.15.4 Link Layer Security (LLSEC)
 #ifdef CONTIKI_LLSEC_ACTIVATED
 #undef LLSEC802154_CONF_ENABLED
-#define LLSEC802154_CONF_ENABLED          1
+#define LLSEC802154_CONF_ENABLED          		1
 #undef NETSTACK_CONF_FRAMER
-#define NETSTACK_CONF_FRAMER              noncoresec_framer
+#define NETSTACK_CONF_FRAMER              		noncoresec_framer
 #undef NETSTACK_CONF_LLSEC
-#define NETSTACK_CONF_LLSEC               noncoresec_driver
+#define NETSTACK_CONF_LLSEC               		noncoresec_driver
 #undef NONCORESEC_CONF_SEC_LVL
-#define NONCORESEC_CONF_SEC_LVL           7
+#define NONCORESEC_CONF_SEC_LVL           		7
 
 // Define network wide key
 #define NONCORESEC_CONF_KEY { 0x00 , 0x01 , 0x02 , 0x03 , \
@@ -128,33 +132,33 @@
 
 // Define RPL Routing options
 /* Define as minutes */
-#define RPL_CONF_DEFAULT_LIFETIME_UNIT   60
+#define RPL_CONF_DEFAULT_LIFETIME_UNIT   	60
 
 /* 10 minutes lifetime of routes */
-#define RPL_CONF_DEFAULT_LIFETIME        10
+#define RPL_CONF_DEFAULT_LIFETIME        	10
 
 #define RPL_CONF_DEFAULT_ROUTE_INFINITE_LIFETIME 1
 
 #if WITH_NON_STORING
 #undef RPL_NS_CONF_LINK_NUM
-#define RPL_NS_CONF_LINK_NUM 40 /* Number of links maintained at the root. Can be set to 0 at non-root nodes. */
+#define RPL_NS_CONF_LINK_NUM 	40
 #undef UIP_CONF_MAX_ROUTES
-#define UIP_CONF_MAX_ROUTES 0 /* No need for routes */
+#define UIP_CONF_MAX_ROUTES 	0
 #undef RPL_CONF_MOP
-#define RPL_CONF_MOP RPL_MOP_NON_STORING /* Mode of operation*/
+#define RPL_CONF_MOP RPL_MOP_NON_STORING
 #endif /* WITH_NON_STORING */
 
 #if RPL_NON_STORING
 #undef UIP_CONF_MAX_ROUTES
-#define UIP_CONF_MAX_ROUTES 0
+#define UIP_CONF_MAX_ROUTES 	0
 #ifndef RPL_NS_CONF_LINK_NUM
-#define RPL_NS_CONF_LINK_NUM   24
+#define RPL_NS_CONF_LINK_NUM    24
 #endif
 #else
 #undef RPL_NS_CONF_LINK_NUM
 #define RPL_NS_CONF_LINK_NUM   0
 #ifndef UIP_CONF_MAX_ROUTES
-#define UIP_CONF_MAX_ROUTES   24
+#define UIP_CONF_MAX_ROUTES    24
 #endif
 #endif
 
@@ -163,7 +167,7 @@
 #endif
 
 #define RPL_MAX_DAG_PER_INSTANCE	2
-#define RPL_MAX_INSTANCES		1
+#define RPL_MAX_INSTANCES			1
 
 // Always use infinite upward route
 #define RPL_CONF_DEFAULT_ROUTE_INFINITE_LIFETIME    1
@@ -177,12 +181,9 @@
 #endif
 
 // Enable DAO-Ack
-#define RPL_CONF_WITH_DAO_ACK       1
-#define RPL_CONF_RPL_REPAIR_ON_DAO_NACK    0
+#define RPL_CONF_WITH_DAO_ACK       		1
+#define RPL_CONF_RPL_REPAIR_ON_DAO_NACK    	0
 #define RPL_CONF_DIO_REFRESH_DAO_ROUTES     0
-
-#define RPL_CONF_MAX_PARENTS_PER_DAG    12
-
-
+#define RPL_CONF_MAX_PARENTS_PER_DAG    	12
 
 #endif
