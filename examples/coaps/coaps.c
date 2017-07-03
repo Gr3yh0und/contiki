@@ -116,11 +116,13 @@ PROCESS_THREAD(coaps_process, ev, data)
 
 #ifdef WITH_CLIENT_PUT
 	// PUT light
+	PRINTF("UDP Client with PUT\n");
 	static coap_resource_path_t resourcePath = {1, {"status"}};
 	static coap_resource_t request = {COAP_RDY, COAP_METHOD_PUT, COAP_TYPE_CON, NULL, &resourcePath, COAP_SET_CONTENTTYPE(COAP_CONTENTTYPE_TXT_PLAIN)};
 	coap_make_request(messageId, NULL, &request, &messageId, sizeof(messageId), &requestPacket);
 #else
 	// GET time
+	PRINTF("UDP Client with GET\n");
 	static coap_resource_path_t resourcePath = {1, {"status"}};
 	static coap_resource_t request = {COAP_RDY, COAP_METHOD_GET, COAP_TYPE_CON, NULL, &resourcePath, COAP_SET_CONTENTTYPE(COAP_CONTENTTYPE_TXT_PLAIN)};
 	coap_make_request(messageId, NULL, &request, NULL, 0, &requestPacket);
@@ -132,16 +134,18 @@ PROCESS_THREAD(coaps_process, ev, data)
 
 #ifdef WITH_SERVER
 	// Setup server UDP
-	PRINTF("Starting UDP server...\n");
+	PRINTF("Starting UDP server on port: %d\n", UDP_LOCAL_PORT);
 	udp_conn = udp_new(NULL, 0, NULL);
 	udp_bind(udp_conn, UIP_HTONS(UDP_LOCAL_PORT));
 #ifdef WITH_YACOAP
+	PRINTF("Initializing CoAP...\n");
 	resource_setup(resources);
 #endif
 #endif
 
 #ifdef WITH_TINYDTLS
 	// Setup DTLS
+	PRINTF("Initializing DTLS...\n");
 	dtls_set_log_level(DTLS_DEBUG_LEVEL);
 	dtls_context = dtls_new_context(udp_conn);
 
@@ -155,6 +159,7 @@ PROCESS_THREAD(coaps_process, ev, data)
 	}
 #endif
 
+	PRINTF("Entering main loop...\n");
 	while(1) {
 		PROCESS_WAIT_EVENT();
 

@@ -136,6 +136,35 @@ int handle_event(struct dtls_context_t *dtls_context, session_t *session, dtls_a
 
 #if defined(WITH_CLIENT) || defined(WITH_SERVER)
 /**
+ * @brief Handle incoming message for insecure CoAP Server
+ */
+void handle_message(){
+	coap_packet_t requestPacket, responsePacket;
+	uint8_t responseBuffer[DTLS_MAX_BUF];
+	size_t responseBufferLength = sizeof(responseBuffer);
+
+	// Parse received packet for CoAP request
+	if ((coap_parse(uip_appdata, uip_datalen(), &requestPacket)) < COAP_ERR)
+	{
+		// Get data from resources
+		coap_handle_request(resources, &requestPacket, &responsePacket);
+
+		// Build response packet and send it back
+		if ((coap_build(&responsePacket, responseBuffer, &responseBufferLength)) < COAP_ERR)
+		{
+			// Send response packet
+			PRINTF("Sending CoAP answer...\n");
+			MEASUREMENT_DTLS_WRITE_ON;
+			uip_ipaddr_copy(&udp_conn->ripaddr, &UIP_IP_BUF->srcipaddr);
+			udp_conn->rport = UIP_UDP_BUF->srcport;
+			uip_udp_packet_send(udp_conn, responseBuffer, responseBufferLength);
+			uip_create_unspecified(&udp_conn->ripaddr);
+			MEASUREMENT_DTLS_WRITE_OFF;
+		}
+	}
+}
+
+/**
  * @brief Handler called when a new raw UDP packet is received
  */
 void read_packet()
@@ -151,6 +180,7 @@ void read_packet()
 
 	// When new packet is received
 	if(uip_newdata()) {
+		PRINTF("Received CoAP request...\n");
 		// extract data into session
 		dtls_session_init(&session);
 		uip_ipaddr_copy(&session.addr, &UIP_IP_BUF->srcipaddr);
@@ -173,33 +203,5 @@ void read_packet()
 #if WITH_SERVER
 	MEASUREMENT_DTLS_TOTAL_OFF;
 #endif
-}
-
-/**
- * @brief Handle incoming message for insecure CoAP Server
- */
-void handle_message(){
-	coap_packet_t requestPacket, responsePacket;
-	uint8_t responseBuffer[DTLS_MAX_BUF];
-	size_t responseBufferLength = sizeof(responseBuffer);
-
-	// Parse received packet for CoAP request
-	if ((coap_parse(uip_appdata, uip_datalen(), &requestPacket)) < COAP_ERR)
-	{
-		// Get data from resources
-		coap_handle_request(resources, &requestPacket, &responsePacket);
-
-		// Build response packet and send it back
-		if ((coap_build(&responsePacket, responseBuffer, &responseBufferLength)) < COAP_ERR)
-		{
-			// Send response packet
-			MEASUREMENT_DTLS_WRITE_ON;
-			uip_ipaddr_copy(&udp_conn->ripaddr, &UIP_IP_BUF->srcipaddr);
-			udp_conn->rport = UIP_UDP_BUF->srcport;
-			uip_udp_packet_send(udp_conn, responseBuffer, responseBufferLength);
-			uip_create_unspecified(&udp_conn->ripaddr);
-			MEASUREMENT_DTLS_WRITE_OFF;
-		}
-	}
 }
 #endif
