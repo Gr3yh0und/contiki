@@ -28,6 +28,7 @@ if [[ $? != 0 ]]; then
 else
 	mv coaps.elf coaps-contiki-cc2538dk.elf
 	mv coaps.bin coaps-contiki-cc2538dk.bin
+	mv coaps-cc2538dk.map coaps-contiki-cc2538dk.map
 fi
 echo "OpenMote:"
 make -j$THREADS TARGET=openmote-cc2538 BOARD_REVISION=REV_A1
@@ -35,7 +36,7 @@ if [[ $? != 0 ]]; then
 	exit 255
 else
 	mv coaps.elf coaps-contiki-openmote.elf
-	mv coaps.bin coaps-contiki-openmote.bin
+	mv coaps-openmote-cc2538.map coaps-contiki-openmote.map
 fi
 
 # Get size of new build
@@ -58,8 +59,8 @@ RE_OLD="([0-9]{3,6}),([0-9]{3,6}),([0-9]{3,6}),([0-9]{3,6})"
 
 # Calculate differences
 TEXT_DIF=`expr $TEXT_NEW - $TEXT_OLD`
-DATA_DIF=`expr $BSS_NEW - $BSS_OLD`
-BSS_DIF=`expr $DATA_NEW - $DATA_OLD`
+BSS_DIF=`expr $BSS_NEW - $BSS_OLD`
+DATA_DIF=`expr $DATA_NEW - $DATA_OLD`
 DEC_DIF=`expr $DEC_NEW - $DEC_OLD`
 
 # Print results
