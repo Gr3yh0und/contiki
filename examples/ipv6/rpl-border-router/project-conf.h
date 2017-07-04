@@ -65,7 +65,7 @@
 #endif
 
 // Define 802.15.4 Settings
-#ifndef CONTIKI_RADIODEFAULTS
+#ifdef CONTIKI_RADIODEFAULTS
 #define NETSTACK_CONF_NETWORK sicslowpan_driver
 #define IEEE802154_CONF_PANID 0xABCD
 #define RF_CHANNEL 26
@@ -83,7 +83,7 @@
 
 // RDC driver
 #ifdef CONTIKI_RDC_CONTIKI
-#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 8
+#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 4
 #define NETSTACK_CONF_RDC     		contikimac_driver
 #endif
 
